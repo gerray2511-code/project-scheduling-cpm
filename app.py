@@ -8,10 +8,12 @@ from ui.result_view import render_result
 from ui.graph_view import render_graph
 from ui.gantt_chart import render_gantt_chart
 
+from utils.file_handler import save_project
 
-# ==================================================
+
+# =====================================
 # KONFIGURASI HALAMAN
-# ==================================================
+# =====================================
 
 st.set_page_config(
     page_title="Project Scheduling with CPM",
@@ -19,97 +21,165 @@ st.set_page_config(
     layout="wide"
 )
 
-# ==================================================
+
+# =====================================
 # SIDEBAR
-# ==================================================
+# =====================================
 
-with st.sidebar:
+st.sidebar.title("📊 Project Scheduling")
 
-    st.title("📊 Project Scheduling")
+menu = st.sidebar.radio(
+    "Pilih Menu",
+    [
+        "🏠 Beranda",
+        "📋 Analisis CPM",
+        "📖 Panduan",
+        "ℹ️ Tentang"
+    ]
+)
 
-    st.markdown("---")
 
-    st.subheader("🏠 Home")
+# =====================================
+# BERANDA
+# =====================================
 
-    st.write(
+if menu == "🏠 Beranda":
+
+    st.title("📊 Sistem Penjadwalan Proyek")
+
+    st.subheader("Critical Path Method (CPM)")
+
+    st.markdown(
         """
-Sistem ini digunakan untuk melakukan
-analisis penjadwalan proyek menggunakan
-algoritma **Critical Path Method (CPM)**.
-        """
+Selamat datang pada aplikasi **Project Scheduling with
+Critical Path Method (CPM)**.
+
+Aplikasi ini dikembangkan untuk membantu pengguna dalam
+melakukan analisis penjadwalan proyek berdasarkan
+hubungan ketergantungan (dependency) antar aktivitas.
+
+### Fitur Utama
+
+- ✅ Input aktivitas proyek
+- ✅ Input dependency
+- ✅ Perhitungan Critical Path Method (CPM)
+- ✅ Perhitungan ES, EF, LS, LF
+- ✅ Perhitungan Slack
+- ✅ Menentukan Critical Path
+- ✅ Visualisasi Dependency Graph
+- ✅ Visualisasi Gantt Chart
+
+Gunakan menu **Analisis CPM** untuk mulai melakukan
+perhitungan proyek.
+"""
     )
 
-    st.markdown("---")
 
-    st.subheader("🧑‍💻 Informasi Aplikasi")
+# =====================================
+# ANALISIS CPM
+# =====================================
 
-    st.write("**Nama:** Project Scheduling with CPM")
-    st.write("**Versi:** 1.0")
-    st.write("**Framework:** Streamlit")
+elif menu == "📋 Analisis CPM":
 
-    st.markdown("---")
+    st.title("📋 Analisis Critical Path Method")
 
-    st.subheader("📚 Struktur Data")
+    st.markdown(
+        """
+Masukkan data aktivitas proyek beserta durasi dan
+dependency untuk dilakukan analisis menggunakan
+algoritma **Critical Path Method (CPM)**.
+"""
+    )
 
-    st.success("Graph")
-    st.success("Adjacency List")
-    st.success("Queue (Deque)")
+    st.divider()
 
-    st.markdown("---")
+    activities = render_input_form()
 
-    st.subheader("⚙️ Algoritma")
+    st.divider()
 
-    st.info("Topological Sort")
-    st.info("Forward Pass")
-    st.info("Backward Pass")
-    st.info("Critical Path Method (CPM)")
+    if st.button(
+        "🚀 Hitung CPM",
+        use_container_width=True
+    ):
 
-    st.markdown("---")
+        try:
 
-    with st.expander("📖 Tentang CPM"):
+            project = build_project(
+                activities
+            )
 
-        st.write(
-            """
-Critical Path Method (CPM) adalah metode
-manajemen proyek yang digunakan untuk
-mengidentifikasi jalur kritis (Critical Path)
-dan menghitung estimasi waktu minimum
-penyelesaian suatu proyek.
+            calculator = CPMCalculator(
+                project
+            )
 
-Aplikasi ini memanfaatkan:
+            result = calculator.calculate()
 
-- Graph
-- Adjacency List
-- Queue (Deque)
-- Topological Sort
-- Forward Pass
-- Backward Pass
+            save_project(
+                "project.json",
+                activities
+            )
 
-untuk melakukan analisis penjadwalan proyek.
-            """
-        )
+            render_result(result)
 
-    st.markdown("---")
+            st.divider()
 
-    st.caption("© 2026 Project Scheduling with CPM")
+            st.header("🕸️ Dependency Graph")
+
+            render_graph(project)
+
+            st.divider()
+
+            st.header("📅 Gantt Chart")
+
+            render_gantt_chart(project)
+
+        except Exception as e:
+
+            st.error(str(e))
 
 
-# ==================================================
-# HEADER
-# ==================================================
+# =====================================
+# PANDUAN
+# =====================================
 
-st.title("📊 Sistem Penjadwalan Proyek")
+elif menu == "📖 Panduan":
 
-st.subheader("Critical Path Method (CPM)")
+    st.title("📖 Panduan Penggunaan")
 
-st.markdown(
-    """
-Aplikasi ini digunakan untuk melakukan analisis
-penjadwalan proyek menggunakan algoritma
-**Critical Path Method (CPM)**.
+    st.markdown(
+        """
+## Langkah 1
 
-Masukkan daftar aktivitas proyek beserta
-durasi dan dependency untuk memperoleh:
+Masukkan jumlah aktivitas proyek.
+
+---
+
+## Langkah 2
+
+Isi data setiap aktivitas:
+
+- ID Aktivitas
+- Nama Aktivitas
+- Durasi
+- Dependency
+
+Dependency dapat lebih dari satu.
+
+Contoh:
+
+
+---
+
+## Langkah 3
+
+Klik tombol:
+
+
+---
+
+## Langkah 4
+
+Sistem akan menghitung:
 
 - Earliest Start (ES)
 - Earliest Finish (EF)
@@ -117,93 +187,78 @@ durasi dan dependency untuk memperoleh:
 - Latest Finish (LF)
 - Slack
 - Critical Path
-- Total Durasi Proyek
 
-Selain itu aplikasi juga menampilkan
-visualisasi dependency graph dan Gantt Chart.
+---
+
+## Langkah 5
+
+Hasil analisis akan ditampilkan dalam bentuk:
+
+- Ringkasan proyek
+- Tabel hasil CPM
+- Dependency Graph
+- Gantt Chart
+
+---
+
+Pastikan dependency yang dimasukkan sudah benar agar
+perhitungan dapat dilakukan dengan optimal.
 """
-)
-
-st.divider()
-
-# ==================================================
-# INPUT FORM
-# ==================================================
-
-activities = render_input_form()
-
-# ==================================================
-# SIDEBAR STATISTIK
-# ==================================================
-
-with st.sidebar:
-
-    st.markdown("---")
-
-    st.subheader("📊 Statistik")
-
-    st.metric(
-        "Jumlah Aktivitas",
-        len(activities)
     )
 
-# ==================================================
-# TOMBOL HITUNG
-# ==================================================
 
-if st.button(
-    "🚀 Hitung CPM",
-    use_container_width=True
-):
+# =====================================
+# TENTANG
+# =====================================
 
-    try:
+elif menu == "ℹ️ Tentang":
 
-        # ------------------------------------------
-        # Bangun Graph
-        # ------------------------------------------
+    st.title("ℹ️ Tentang Aplikasi")
 
-        project = build_project(
-            activities
-        )
+    st.markdown(
+        """
+## Project Scheduling with Critical Path Method
 
-        # ------------------------------------------
-        # Jalankan CPM
-        # ------------------------------------------
+Aplikasi ini merupakan implementasi algoritma
+**Critical Path Method (CPM)** menggunakan
+bahasa pemrograman Python.
 
-        calculator = CPMCalculator(
-            project
-        )
+### Tujuan
 
-        result = calculator.calculate()
+Membantu melakukan analisis manajemen waktu proyek
+dengan menentukan jalur kritis dan estimasi durasi
+penyelesaian proyek.
 
-        # ------------------------------------------
-        # Hasil Analisis
-        # ------------------------------------------
+---
 
-        render_result(result)
+## Struktur Data yang Digunakan
 
-        # ------------------------------------------
-        # Dependency Graph
-        # ------------------------------------------
+- Graph
+- Adjacency List
 
-        st.divider()
+---
 
-        st.header("🕸️ Visualisasi Dependency Graph")
+## Algoritma yang Digunakan
 
-        render_graph(project)
+- Topological Sort
+- Forward Pass
+- Backward Pass
+- Slack Calculation
+- Critical Path Method (CPM)
 
-        # ------------------------------------------
-        # Gantt Chart
-        # ------------------------------------------
+---
 
-        st.divider()
+## Teknologi
 
-        st.header("📅 Gantt Chart")
+- Python
+- Streamlit
+- NetworkX
+- Matplotlib
+- Pandas
 
-        render_gantt_chart(project)
+---
 
-    except Exception as error:
-
-        st.error(
-            f"❌ Terjadi kesalahan: {error}"
-        )
+Dikembangkan sebagai project implementasi
+**Struktur Data dan Pemrograman**.
+"""
+    )
